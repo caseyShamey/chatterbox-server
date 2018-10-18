@@ -77,8 +77,7 @@ var requestHandler = function(request, response) {
 
   }
 
-
-
+  //console.log(data);
 
   if (request.method === 'GET' && request.url !== '/classes/messages') {
     response.writeHead(404, 'Nope!');
