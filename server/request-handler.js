@@ -12,6 +12,9 @@ this file and include it in basic-server.js so that it actually works.
 
 **************************************************************/
 var url = require('url');
+var fs = require('fs');
+
+
 
 var defaultCorsHeaders = {
   'access-control-allow-origin': '*',
@@ -20,9 +23,18 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
-var results = [];
+var headers = defaultCorsHeaders;
+headers['Content-Type'] = 'application/json';
+
+var respond = function(response, data, status) {
+  response.writeHead(status, headers);
+  response.end(data);
+};
+
+var messages = [];
 
 var requestHandler = function(request, response) {
+  //console.log(request)
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -35,7 +47,7 @@ var requestHandler = function(request, response) {
   // Do some basic logging.
 
 
-  var headers = defaultCorsHeaders;
+
 
   //
   // Adding more logging to your server can be an easy way to get passive
@@ -48,7 +60,7 @@ var requestHandler = function(request, response) {
   //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'application/json';
+
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
@@ -56,9 +68,17 @@ var requestHandler = function(request, response) {
 
 
   if (request.method === 'GET' && request.url === '/classes/messages') {
-    response.writeHead(200, headers);
-    response.end(JSON.stringify({results: results}));
+    var data = {};
+    data.results = messages;
+    data = JSON.stringify(data);
+    console.log('data', data);
+    respond(response, data, 200);
+    // var data = JSON.stringify({results: messages});
+
   }
+
+
+
 
   if (request.method === 'GET' && request.url !== '/classes/messages') {
     response.writeHead(404, 'Nope!');
@@ -66,20 +86,18 @@ var requestHandler = function(request, response) {
   }
 
 
-
   if (request.method === 'POST' && request.url === '/classes/messages') {
-    var body = [];
+    var body = '';
     request.on('error', (err) => {
       console.error(err);
     }).on('data', (chunk) => {
-      body.push(chunk);
+      body += chunk;
     }).on('end', () => {
-      body = Buffer.concat(body).toString();
-      results.push(parse.JSON(body));
+      var data = JSON.parse(body);
+      messages.push(data);
     });
-
     response.writeHead(201, headers);
-    // response.write('hello World');
+    //response.write('hello World');
     response.end();
 
 
@@ -102,9 +120,10 @@ var requestHandler = function(request, response) {
 
   }
 
-  // } else if (request.method === 'OPTIONS') {
-
-  // }
+  if (request.method === 'OPTIONS') {
+    response.writeHead(200, headers);
+    response.end();
+  }
 
 
 
@@ -117,6 +136,7 @@ var requestHandler = function(request, response) {
   // node to actually send all the data over to the client.
   response.end();
 };
+
 
 
 // console.log('Serving request type ' + request.method + ' for url ' + request.url);
